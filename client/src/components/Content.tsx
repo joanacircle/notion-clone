@@ -1,7 +1,12 @@
 import React, { useCallback, useState } from 'react'
-import { createEditor, Descendant, BaseEditor } from 'slate'
-import { Slate, Editable, withReact, RenderElementProps } from 'slate-react'
-import { ReactEditor } from 'slate-react'
+import { Node, createEditor, Descendant, BaseEditor, Transforms } from 'slate'
+import {
+  Slate,
+  Editable,
+  withReact,
+  RenderElementProps,
+  ReactEditor
+} from 'slate-react'
 
 type CustomElement = { type: 'paragraph' | 'heading'; children: Descendant[] }
 
@@ -43,10 +48,44 @@ const Content: React.FC = () => {
     }
   }, [])
 
+  // Function to check if the last black is empty
+  const isLastBlockEmpty = () => {
+    const lastNode = Node.last(editor, [editor.children.length - 1])
+    const lastBlock = lastNode?.[0] as CustomElement | undefined
+
+    if (lastBlock) {
+      const text = Node.string(lastBlock)
+      return text.trim() === ''
+    }
+    return false
+  }
+
+  // Handle click on whitespace to add a new block
+  const handleEditorClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    // Check if the click is outside any existing text
+    const target = event.target as HTMLElement
+    const isInsideEditor = target.closest('[data-slate-editor]')
+
+    if (!isInsideEditor) {
+      if (!isLastBlockEmpty()) {
+        ReactEditor.focus(editor)
+
+        // Insert a new paragraph block
+        Transforms.insertNodes(editor, {
+          type: 'paragraph',
+          children: [{ text: '' }]
+        })
+      }
+    }
+  }
+
   return (
-    <div className='mt-4'>
+    <div className='mt-4 min-h-[500px]' onClick={handleEditorClick}>
       <Slate editor={editor} initialValue={value} onValueChange={setValue}>
-        <Editable renderElement={renderElement} className='outline-none' />
+        <Editable
+          renderElement={renderElement}
+          className='outline-none w-full'
+        />
       </Slate>
     </div>
   )
