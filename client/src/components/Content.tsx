@@ -7,6 +7,8 @@ import {
   RenderElementProps,
   ReactEditor
 } from 'slate-react'
+import PlusIcon from '../icons/PlusIcon'
+import Bars from '../icons/Bars'
 
 type CustomElement = { type: 'paragraph' | 'heading'; children: Descendant[] }
 
@@ -31,21 +33,23 @@ const Content: React.FC = () => {
   const renderElement = useCallback((props: RenderElementProps) => {
     const { attributes, children, element } = props
 
-    switch (element.type) {
-      case 'heading':
-        return (
+    return (
+      <div className='relative group'>
+        <span className='absolute left-[-50px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1'>
+          <PlusIcon className='text-slate-500 size-4 cursor-grab' />
+          <Bars className='text-slate-500 size-4 cursor-grab' />
+        </span>
+        {element.type === 'heading' ? (
           <h2 {...attributes} className='text-xl font-bold'>
             {children}
           </h2>
-        )
-      case 'paragraph':
-      default:
-        return (
+        ) : (
           <p {...attributes} className='mb-2'>
             {children}
           </p>
-        )
-    }
+        )}
+      </div>
+    )
   }, [])
 
   // Function to check if the last black is empty
@@ -84,7 +88,7 @@ const Content: React.FC = () => {
       <Slate editor={editor} initialValue={value} onValueChange={setValue}>
         <Editable
           renderElement={renderElement}
-          className='outline-none w-full'
+          className='w-full outline-none'
         />
       </Slate>
     </div>
