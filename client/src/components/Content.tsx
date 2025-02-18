@@ -36,7 +36,7 @@ const Content: React.FC = () => {
 
     return (
       <div className='relative group'>
-        <span className='absolute left-[-50px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1/2'>
+        <span className='absolute left-[-50px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex'>
           <Tooltip.Provider>
             <Tooltip.Root delayDuration={100}>
               <Tooltip.Trigger>

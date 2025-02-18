@@ -11,12 +11,11 @@ const initialTitle: Descendant[] = [
 
 const Title: React.FC = () => {
   const [editor] = useState(() => withReact(createEditor()))
-  console.log({ editor })
 
   return (
     <Slate editor={editor} initialValue={initialTitle}>
       <Editable
-        className='text-4xl font-bold outline-none w-full placeholder-gray-400 placeholder-opacity-60 text-black'
+        className='w-full text-4xl font-bold text-black placeholder-gray-400 outline-none placeholder-opacity-60'
         placeholder='New page'
       />
     </Slate>
