@@ -7,9 +7,9 @@ const Bars: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => {
       className={className}
     >
       <path
-        fill-rule='evenodd'
+        fillRule='evenodd'
         d='M2 3.75A.75.75 0 0 1 2.75 3h10.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 3.75ZM2 8a.75.75 0 0 1 .75-.75h10.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 8Zm0 4.25a.75.75 0 0 1 .75-.75h10.5a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1-.75-.75Z'
-        clip-rule='evenodd'
+        clipRule='evenodd'
       />
     </svg>
   )

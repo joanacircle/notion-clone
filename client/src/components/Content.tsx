@@ -7,6 +7,7 @@ import {
   RenderElementProps,
   ReactEditor
 } from 'slate-react'
+import * as Tooltip from '@radix-ui/react-tooltip'
 import PlusIcon from '../icons/PlusIcon'
 import Bars from '../icons/Bars'
 
@@ -35,10 +36,42 @@ const Content: React.FC = () => {
 
     return (
       <div className='relative group'>
-        <span className='absolute left-[-50px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1'>
-          <PlusIcon className='text-slate-500 size-4 cursor-grab' />
-          <Bars className='text-slate-500 size-4 cursor-grab' />
+        <span className='absolute left-[-50px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1/2'>
+          <Tooltip.Provider>
+            <Tooltip.Root delayDuration={100}>
+              <Tooltip.Trigger>
+                <div className='p-1 rounded-md hover:bg-slate-200 cursor-grab'>
+                  <PlusIcon className='text-slate-500 size-4 cursor-grab' />
+                </div>
+              </Tooltip.Trigger>
+
+              <Tooltip.Portal>
+                <Tooltip.Content className='px-2 py-1 my-1 text-xs font-extrabold bg-black rounded-md shadow-md text-slate-300'>
+                  <span className='text-white'>Click </span>to add below <br />{' '}
+                  <span className='text-white'>Option-click </span>
+                  to add above
+                </Tooltip.Content>
+              </Tooltip.Portal>
+            </Tooltip.Root>
+
+            <Tooltip.Root delayDuration={100}>
+              <Tooltip.Trigger>
+                <div className='p-1 rounded-md hover:bg-slate-200 cursor-grab'>
+                  <Bars className='text-slate-500 size-4' />
+                </div>
+              </Tooltip.Trigger>
+
+              <Tooltip.Portal>
+                <Tooltip.Content className='px-2 py-1 my-1 text-xs font-extrabold bg-black rounded-md shadow-md text-slate-300'>
+                  <span className='text-white'>Drag </span>to move <br />{' '}
+                  <span className='text-white'>Click </span>
+                  to open menu
+                </Tooltip.Content>
+              </Tooltip.Portal>
+            </Tooltip.Root>
+          </Tooltip.Provider>
         </span>
+
         {element.type === 'heading' ? (
           <h2 {...attributes} className='text-xl font-bold'>
             {children}
