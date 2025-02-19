@@ -1,5 +1,12 @@
 import React, { useCallback, useState } from 'react'
-import { Node, createEditor, Descendant, BaseEditor, Transforms } from 'slate'
+import {
+  Node,
+  createEditor,
+  Descendant,
+  BaseEditor,
+  Transforms,
+  Path
+} from 'slate'
 import {
   Slate,
   Editable,
@@ -31,8 +38,23 @@ const Content: React.FC = () => {
   const [editor] = useState(() => withReact(createEditor()))
   const [value, setValue] = useState<Descendant[]>(initialValue)
 
+  const addBlock = (event: React.MouseEvent, path: number[]) => {
+    event.preventDefault()
+    const isOptionPressed = event.altKey
+
+    const newBlock: CustomElement = {
+      type: 'paragraph',
+      children: [{ text: '' }]
+    }
+
+    Transforms.insertNodes(editor, newBlock, {
+      at: isOptionPressed ? path : Path.next(path) // Insert above (before) or below (after)
+    })
+  }
+
   const renderElement = useCallback((props: RenderElementProps) => {
     const { attributes, children, element } = props
+    const path = ReactEditor.findPath(editor, element)
 
     return (
       <div className='relative group'>
@@ -40,7 +62,10 @@ const Content: React.FC = () => {
           <Tooltip.Provider>
             <Tooltip.Root delayDuration={100}>
               <Tooltip.Trigger>
-                <div className='p-1 rounded-md hover:bg-slate-200 cursor-grab'>
+                <div
+                  className='p-1 rounded-md hover:bg-slate-200 cursor-grab'
+                  onClick={(e) => addBlock(e, path)}
+                >
                   <PlusIcon className='text-slate-500 size-4 cursor-grab' />
                 </div>
               </Tooltip.Trigger>
