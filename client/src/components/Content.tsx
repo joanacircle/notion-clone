@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useState, useRef } from 'react'
 import {
   Node,
   createEditor,
@@ -37,6 +37,14 @@ const initialValue: CustomElement[] = [
 const Content: React.FC = () => {
   const [editor] = useState(() => withReact(createEditor()))
   const [value, setValue] = useState<Descendant[]>(initialValue)
+  const dragItem = useRef<number | null>(null)
+  const dragOverItem = useRef<number | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+  const [dropIndicator, setDropIndicator] = useState<{
+    index: number
+    isAbove: boolean
+  } | null>(null) // Track where the indicator should appear
 
   const addBlock = (event: React.MouseEvent, path: number[]) => {
     event.preventDefault()
@@ -52,63 +60,172 @@ const Content: React.FC = () => {
     })
   }
 
-  const renderElement = useCallback((props: RenderElementProps) => {
-    const { attributes, children, element } = props
-    const path = ReactEditor.findPath(editor, element)
+  const handleDragStart = (
+    e: React.DragEvent<HTMLDivElement>,
+    position: number
+  ) => {
+    e.stopPropagation()
+    dragItem.current = position
+    setIsDragging(true)
+    setDraggedIndex(position)
+    e.dataTransfer.effectAllowed = 'move'
+  }
 
-    return (
-      <div className='relative group'>
-        <span className='absolute left-[-50px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex'>
-          <Tooltip.Provider>
-            <Tooltip.Root delayDuration={100}>
-              <Tooltip.Trigger>
-                <div
-                  className='p-1 rounded-md hover:bg-slate-200 cursor-grab'
-                  onClick={(e) => addBlock(e, path)}
-                >
-                  <PlusIcon className='text-slate-500 size-4 cursor-grab' />
-                </div>
-              </Tooltip.Trigger>
+  const handleDragEnter = (
+    e: React.DragEvent<HTMLDivElement>,
+    position: number
+  ) => {
+    e.preventDefault()
+    e.stopPropagation()
+    dragOverItem.current = position
+  }
 
-              <Tooltip.Portal>
-                <Tooltip.Content className='px-2 py-1 my-1 text-xs font-extrabold bg-black rounded-md shadow-md text-slate-300'>
-                  <span className='text-white'>Click </span>to add below <br />{' '}
-                  <span className='text-white'>Option-click </span>
-                  to add above
-                </Tooltip.Content>
-              </Tooltip.Portal>
-            </Tooltip.Root>
+  const handleDragOver = (
+    e: React.DragEvent<HTMLDivElement>,
+    position: number
+  ) => {
+    e.preventDefault()
+    e.stopPropagation()
+    e.dataTransfer.dropEffect = 'move'
 
-            <Tooltip.Root delayDuration={100}>
-              <Tooltip.Trigger>
-                <div className='p-1 rounded-md hover:bg-slate-200 cursor-grab'>
-                  <Bars className='text-slate-500 size-4' />
-                </div>
-              </Tooltip.Trigger>
+    // Calculate if the drop should be above or below based on cursor position
+    const rect = e.currentTarget.getBoundingClientRect()
+    const offsetY = e.clientY - rect.top
+    const isAbove = offsetY < rect.height / 2
 
-              <Tooltip.Portal>
-                <Tooltip.Content className='px-2 py-1 my-1 text-xs font-extrabold bg-black rounded-md shadow-md text-slate-300'>
-                  <span className='text-white'>Drag </span>to move <br />{' '}
-                  <span className='text-white'>Click </span>
-                  to open menu
-                </Tooltip.Content>
-              </Tooltip.Portal>
-            </Tooltip.Root>
-          </Tooltip.Provider>
-        </span>
+    setDropIndicator({ index: position, isAbove })
+    dragOverItem.current = position
+  }
 
-        {element.type === 'heading' ? (
-          <h2 {...attributes} className='text-xl font-bold'>
-            {children}
-          </h2>
-        ) : (
-          <p {...attributes} className='mb-2'>
-            {children}
-          </p>
-        )}
-      </div>
-    )
-  }, [])
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.stopPropagation()
+    setDropIndicator(null) // Clear indicator when leaving
+  }
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    const dragIndex = dragItem.current
+    const dropIndex = dragOverItem.current
+
+    if (dragIndex === null || dropIndex === null || !dropIndicator) return
+
+    // Adjust the drop position based on whether it's above or below
+    const targetIndex =
+      dropIndicator.isAbove && dropIndex > dragIndex ? dropIndex - 1 : dropIndex
+
+    Transforms.moveNodes(editor, {
+      at: [dragIndex],
+      to: [targetIndex]
+    })
+
+    // Reset all states
+    dragItem.current = null
+    dragOverItem.current = null
+    setIsDragging(false)
+    setDraggedIndex(null)
+    setDropIndicator(null)
+  }
+
+  const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
+    e.stopPropagation()
+    setIsDragging(false)
+    setDraggedIndex(null)
+    setDropIndicator(null)
+    dragItem.current = null
+    dragOverItem.current = null
+  }
+
+  const renderElement = useCallback(
+    (props: RenderElementProps) => {
+      const { attributes, children, element } = props
+      const path = ReactEditor.findPath(editor, element)
+      const position = path[0]
+      const isBeingDragged = draggedIndex === position
+
+      // Determine if the drop indicator should appear above or below this block
+      const showIndicatorAbove =
+        dropIndicator?.index === position &&
+        dropIndicator?.isAbove &&
+        !isBeingDragged
+      const showIndicatorBelow =
+        dropIndicator?.index === position &&
+        !dropIndicator?.isAbove &&
+        !isBeingDragged
+
+      return (
+        <div
+          className={`relative group transition-all ${
+            isBeingDragged ? 'opacity-50 bg-gray-100' : ''
+          }`}
+          onDragEnter={(e) => handleDragEnter(e, position)}
+          onDragOver={(e) => handleDragOver(e, position)}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          {...attributes}
+        >
+          {/* Drop indicator above the block */}
+          {showIndicatorAbove && (
+            <div className='absolute left-0 right-0 z-10 h-1 bg-blue-200 -top-1' />
+          )}
+
+          <span className='absolute left-[-50px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex'>
+            <Tooltip.Provider>
+              <Tooltip.Root delayDuration={100}>
+                <Tooltip.Trigger>
+                  <div
+                    className='p-1 rounded-md cursor-pointer hover:bg-slate-200'
+                    onClick={(e) => addBlock(e, path)}
+                  >
+                    <PlusIcon className='text-slate-500 size-4' />
+                  </div>
+                </Tooltip.Trigger>
+                <Tooltip.Portal>
+                  <Tooltip.Content className='px-2 py-1 my-1 text-xs font-extrabold bg-black rounded-md shadow-md text-slate-300'>
+                    <span className='text-white'>Click </span>to add below{' '}
+                    <br /> <span className='text-white'>Option-click </span>to
+                    add above
+                  </Tooltip.Content>
+                </Tooltip.Portal>
+              </Tooltip.Root>
+
+              <Tooltip.Root delayDuration={100}>
+                <Tooltip.Trigger asChild>
+                  <div
+                    className='p-1 rounded-md hover:bg-slate-200 cursor-grab'
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, position)}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <Bars className='text-slate-500 size-4' />
+                  </div>
+                </Tooltip.Trigger>
+                <Tooltip.Portal>
+                  <Tooltip.Content className='px-2 py-1 my-1 text-xs font-extrabold bg-black rounded-md shadow-md text-slate-300'>
+                    <span className='text-white'>Drag </span>to move <br />{' '}
+                    <span className='text-white'>Click </span>to open menu
+                  </Tooltip.Content>
+                </Tooltip.Portal>
+              </Tooltip.Root>
+            </Tooltip.Provider>
+          </span>
+
+          {element.type === 'heading' ? (
+            <h2 className='text-xl font-bold'>{children}</h2>
+          ) : (
+            <p className='mb-2'>{children}</p>
+          )}
+
+          {/* Drop indicator below the block */}
+          {showIndicatorBelow && (
+            <div className='absolute left-0 right-0 z-10 h-1 bg-blue-200 -bottom-1' />
+          )}
+        </div>
+      )
+    },
+    [editor, isDragging, draggedIndex, dropIndicator]
+  )
 
   // Function to check if the last black is empty
   const isLastBlockEmpty = () => {
