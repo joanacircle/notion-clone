@@ -14,9 +14,7 @@ import {
   RenderElementProps,
   ReactEditor
 } from 'slate-react'
-import * as Tooltip from '@radix-ui/react-tooltip'
-import PlusIcon from '../icons/PlusIcon'
-import Bars from '../icons/Bars'
+import BlockControls from './BlockControls'
 
 type CustomElement = { type: 'paragraph' | 'heading'; children: Descendant[] }
 
@@ -144,7 +142,7 @@ const Content: React.FC = () => {
       const position = path[0]
       const isBeingDragged = draggedIndex === position
 
-      // Determine if the drop indicator should appear above or below this block
+      //#region Determine if the drop indicator should appear above or below this block
       const showIndicatorAbove =
         dropIndicator?.index === position &&
         dropIndicator?.isAbove &&
@@ -153,6 +151,7 @@ const Content: React.FC = () => {
         dropIndicator?.index === position &&
         !dropIndicator?.isAbove &&
         !isBeingDragged
+      // #endregion
 
       return (
         <div
@@ -170,46 +169,13 @@ const Content: React.FC = () => {
             <div className='absolute left-0 right-0 z-10 h-1 bg-blue-200 -top-1' />
           )}
 
-          <span className='absolute left-[-50px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex'>
-            <Tooltip.Provider>
-              <Tooltip.Root delayDuration={100}>
-                <Tooltip.Trigger>
-                  <div
-                    className='p-1 rounded-md cursor-pointer hover:bg-slate-200'
-                    onClick={(e) => addBlock(e, path)}
-                  >
-                    <PlusIcon className='text-slate-500 size-4' />
-                  </div>
-                </Tooltip.Trigger>
-                <Tooltip.Portal>
-                  <Tooltip.Content className='px-2 py-1 my-1 text-xs font-extrabold bg-black rounded-md shadow-md text-slate-300'>
-                    <span className='text-white'>Click </span>to add below{' '}
-                    <br /> <span className='text-white'>Option-click </span>to
-                    add above
-                  </Tooltip.Content>
-                </Tooltip.Portal>
-              </Tooltip.Root>
-
-              <Tooltip.Root delayDuration={100}>
-                <Tooltip.Trigger asChild>
-                  <div
-                    className='p-1 rounded-md hover:bg-slate-200 cursor-grab'
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, position)}
-                    onDragEnd={handleDragEnd}
-                  >
-                    <Bars className='text-slate-500 size-4' />
-                  </div>
-                </Tooltip.Trigger>
-                <Tooltip.Portal>
-                  <Tooltip.Content className='px-2 py-1 my-1 text-xs font-extrabold bg-black rounded-md shadow-md text-slate-300'>
-                    <span className='text-white'>Drag </span>to move <br />{' '}
-                    <span className='text-white'>Click </span>to open menu
-                  </Tooltip.Content>
-                </Tooltip.Portal>
-              </Tooltip.Root>
-            </Tooltip.Provider>
-          </span>
+          <BlockControls
+            position={position}
+            path={path}
+            addBlock={addBlock}
+            handleDragStart={handleDragStart}
+            handleDragEnd={handleDragEnd}
+          />
 
           {element.type === 'heading' ? (
             <h2 className='text-xl font-bold'>{children}</h2>
