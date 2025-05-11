@@ -11,7 +11,7 @@ const Dialog: React.FC<{ className?: string }> = ({ className }) => {
 
   return (
     <div className={className}>
-      <ul className='p-4 border border-gray-300 rounded-md w-[15vw] max-w-[180px] shadow-md bg-white'>
+      <ul className='p-4 border border-gray-300 rounded-md w-[15vw] max-w-[180px] shadow-md bg-white z-20'>
         {mainList.map((item) => (
           <li
             key={item.title}
